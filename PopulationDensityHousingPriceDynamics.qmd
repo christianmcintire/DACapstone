@@ -1,0 +1,1270 @@
+---
+title: "Population Density and Housing Price Dynamics"
+subtitle: "Data Analytics Capstone"
+author: "Christian McIntire, supported by Dr. Alexandre Scarcioffolo"
+format:
+  html:
+    theme: docx
+    toc: true
+    toc-location: left
+    toc-title: "Contents"
+    include-in-header:
+      - text: |
+          <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+          <style>
+            /* Main Document Styles */
+            body {
+              font-family: 'Libre Baskerville', serif;
+              font-size: 12pt;
+            }
+            h1 {
+              font-size: 24pt;
+            }
+            h2 {
+              font-size: 18pt;
+            }
+            h3 {
+              font-size: 16pt; /* Make Heading 3 smaller than Heading 2 */
+              font-weight: bold; /* Optional: Make less bold */
+              margin-top: 1em; /* Add spacing above Heading 3 */
+            }
+            p {
+              font-size: 12pt;
+            }
+
+            /* TOC Customization */
+            nav#toc {
+              font-size: 12px; /* Main TOC font size */
+              line-height: 1.5em;
+            }
+            nav#toc ul {
+              list-style-type: none; /* Remove bullets */
+              margin: 0;
+              padding-left: 0; /* No initial padding */
+            }
+            nav#toc ul > li {
+              font-size: 8px; /* Main TOC heading font size */
+              font-weight: bold; /* Optional: Bold for main headings */
+            }
+            nav#toc ul ul {
+              margin-left: 2em; /* Indent subheadings more */
+              font-size: 8px; /* Smaller font size for subheadings */
+              color: gray; /* Optional: Gray color for subheadings */
+            }
+            nav#toc ul ul ul {
+              margin-left: 3em; /* Indent further for sub-subheadings */
+              font-size: 6px; /* Even smaller font for deeper levels */
+              color: darkgray; /* Optional: Darker gray for deeper subheadings */
+            }
+            nav#toc ul ul {
+              display: none; /* Initially hide subheadings */
+            }
+            nav#toc ul li:hover > ul {
+              display: block; /* Expand subheadings on hover */
+            }
+
+            /* Hanging Indent for References */
+            .references {
+              font-size: 12pt; /* Match main text font size */
+              line-height: 1.5;
+              text-indent: -1em; /* Create hanging indent */
+              margin-left: 1em; /* Indent subsequent lines */
+            }
+          </style>
+    include-after-body:
+      - text: |
+          <script>
+            // Expand/Collapse TOC Subheadings on Click
+            document.addEventListener("DOMContentLoaded", function() {
+              const tocItems = document.querySelectorAll("nav#toc ul > li");
+              tocItems.forEach(item => {
+                const sublist = item.querySelector("ul");
+                if (sublist) {
+                  item.addEventListener("click", function(e) {
+                    e.stopPropagation(); /* Prevent event bubbling */
+                    this.classList.toggle("open");
+                    sublist.style.display = this.classList.contains("open") ? "block" : "none";
+                  });
+                }
+              });
+            });
+          </script>
+editor: visual
+---
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| error: false
+#| code-fold: true
+#| results: hide
+
+library(dplyr)
+data <- mtcars
+summary <- data %>%
+  summarise(
+    avg_mpg = mean(mpg),
+    avg_hp = mean(hp)
+  )
+summary
+```
+
+### Rayshader Prerender Testing
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| error: false
+#| code-fold: false
+#| include: true
+
+# Test Rayshader plot
+library(rayshader)
+
+volcano %>%
+  sphere_shade(texture = "imhof1") %>%
+  plot_3d(volcano, zscale = 10, theta = 30, phi = 40)
+
+# Render the plot to view it interactively
+rgl::rglwidget()
+```
+
+### NAOR Dataset Cleaning
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Data Cleaning"
+
+library(readr)
+library(readxl)
+library(stringr)
+library(tidyverse)
+
+# Define the file path for the Excel file
+file_path <- "/Users/cmacbook/Documents/Data Analytics Capstone/naorMedianHomePriceData.xlsx"
+
+# Read the Excel data (assuming data is in the first sheet)
+naor_housing_data <- read_xlsx(file_path, sheet = 1)
+
+# Clean the data
+naor_housing_clean <- naor_housing_data %>%
+  # Rename columns for ease of use
+  rename(
+    state = State,
+    county = countyName,
+    median_home_price = medianHomePriceQ32024,
+    monthly_payment_q32024 = monthlyPaymentQ32024,
+    monthly_payment_q32023 = monthlyPaymentQ32023
+  ) %>%
+  # Standardize text and clean numeric columns
+  mutate(
+    state = str_trim(tolower(state)),
+    county = str_trim(tolower(county)),
+    median_home_price = str_replace_all(median_home_price, "[$,]", "") %>% as.numeric(),
+    monthly_payment_q32024 = str_replace_all(monthly_payment_q32024, "[$,]", "") %>% as.numeric(),
+    monthly_payment_q32023 = str_replace_all(monthly_payment_q32023, "[$,]", "") %>% as.numeric()
+  ) %>%
+  # Ensure each county-state pair is unique
+  distinct(county, state, .keep_all = TRUE)
+
+# Display a summary of the cleaned data
+# view(naor_housing_clean)
+
+```
+
+### Shapefiles for Choropleths - United States Census Bureau
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Shapefiles"
+
+library(sf)
+
+# Define file paths for county and state shapefiles
+county_shapefile <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_county/tl_2024_us_county.shp"
+state_shapefile  <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_state/tl_2024_us_state.shp"
+
+# Load the shapefiles
+county_shapes <- st_read(county_shapefile, quiet = TRUE)
+state_shapes  <- st_read(state_shapefile, quiet = TRUE)
+```
+
+### Southeastern United States Choropleth
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Folded Code for Choropleth Graph"
+
+library(tidyverse)
+library(sf)
+library(scales)
+library(stringr)
+library(readr)
+
+# --- 1. Use the cleaned dataset (already in memory) ---
+# naor_housing_clean has columns: state, county, median_home_price, monthly_payment_q32024, monthly_payment_q32023
+
+# Define the Southeastern states you want to include
+southeast_states <- c(
+  "alabama", "arkansas", "louisiana", "kentucky", "tennessee",
+  "mississippi", "georgia", "florida", "north carolina",
+  "south carolina", "virginia", "west virginia"
+)
+
+# Filter your housing data for Southeastern states only
+southeast_data <- naor_housing_clean %>%
+  filter(state %in% southeast_states)
+
+# --- 2. Load Shapefiles ---
+county_shapefile <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_county/tl_2024_us_county.shp"
+state_shapefile  <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_state/tl_2024_us_state.shp"
+
+# Read county shapefile
+county_geo <- st_read(county_shapefile, quiet = TRUE) %>%
+  mutate(
+    # Convert county name to lowercase, trimmed
+    county = str_trim(tolower(NAME)))
+
+# Read state shapefile
+state_geo <- st_read(state_shapefile, quiet = TRUE) %>%
+  mutate(
+    # Convert state name to lowercase, trimmed
+    state = str_trim(tolower(NAME))) %>%
+  select(STATEFP, state)
+
+# Convert state_geo to a regular data frame by dropping geometry
+state_geo_df <- state_geo %>% 
+  st_drop_geometry()
+
+# Now county_geo is still an sf object, but state_geo_df is just a data frame
+county_geo <- county_geo %>%
+  left_join(state_geo_df, by = "STATEFP") %>%
+  mutate(state = str_trim(tolower(state)))
+
+# Filter county_geo for Southeastern states
+county_geo <- county_geo %>%
+  filter(state %in% southeast_states)
+
+# --- 3. Merge Shapefile with Housing Data ---
+southeast_geo <- county_geo %>%
+  left_join(southeast_data, by = c("county", "state")) %>%
+  mutate(
+    # Fill missing prices with the median of existing prices
+    median_home_price = ifelse(
+      is.na(median_home_price),
+      median(median_home_price, na.rm = TRUE),
+      median_home_price
+    ),
+    price = median_home_price  # We'll map 'price' in ggplot
+  )
+
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Folded Code Cleaning for Choropleth Graph"
+
+naor_housing_clean <- naor_housing_clean %>%
+  mutate(
+    # Remove " county" at the end of the string
+    county = str_replace(county, "\\s+county$", ""),
+    # Remove " parish" at the end of the string (common in Louisiana)
+    county = str_replace(county, "\\s+parish$", ""),
+    # Remove " city" if needed (common in Virginia independent cities)
+    county = str_replace(county, "\\s+city$", "")
+  )
+
+southeast_geo <- county_geo %>%
+  left_join(naor_housing_clean, by = c("county", "state")) %>%
+  mutate(
+    median_home_price = ifelse(
+      is.na(median_home_price),
+      median(median_home_price, na.rm = TRUE),
+      median_home_price
+    ),
+    price = median_home_price
+  )
+
+naor_housing_clean <- naor_housing_clean %>%
+  group_by(county, state) %>%
+  summarise(
+    median_home_price = median(median_home_price, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Southeastern US Choropleth with State Borders"
+#| fig-width: 25
+#| fig-height: 20
+
+library(tidyverse)
+library(sf)
+library(scales)
+library(stringr)
+library(readr)
+library(grid)
+
+# 1. Define Southeastern states
+southeast_states <- c(
+  "alabama", "arkansas", "louisiana", "kentucky", "tennessee",
+  "mississippi", "georgia", "florida", "north carolina",
+  "south carolina", "virginia", "west virginia"
+)
+
+# 2. Read state shapefile for Southeastern borders
+state_shapefile  <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_state/tl_2024_us_state.shp"
+state_geo_southeast <- st_read(state_shapefile, quiet = TRUE) %>%
+  mutate(state = str_trim(tolower(NAME))) %>%
+  filter(state %in% southeast_states)
+
+# 3. Build the Southeastern Choropleth
+ggSoutheastPrices <- ggplot() +
+  # Counties with grey30 borders
+  geom_sf(
+    data = southeast_geo,
+    aes(fill = price),
+    color = "grey20",
+    size = 0.05
+  ) +
+  # State borders on top (thicker black lines)
+  geom_sf(
+    data = state_geo_southeast,
+    fill = NA,
+    color = "black",
+    size = 30
+  ) +
+  scale_fill_gradient(
+    name = NULL, 
+    low = "white",
+    high = "darkgreen",
+    na.value = "grey",
+    limits = c(0, 1000000),             
+    labels = scales::label_dollar()
+  ) +
+  labs(
+    title = "County Median Home Prices Q3 2024",
+    subtitle = "Southeastern United States",
+    caption = "Data Source: National Association of Realtors"
+  ) +
+  guides(fill = guide_colorbar(
+    title.theme = element_text(size = 28, hjust = 0.5, margin = margin(b = 10)),
+    label.theme = element_text(size = 24),
+    barheight = unit(10, "cm"),
+    barwidth  = unit(2, "cm"),
+    title.position = "top"
+  )) +
+  theme_linedraw(base_size = 16) +
+  theme(
+    plot.title = element_text(size = 40, hjust = 0.5),
+    plot.subtitle = element_text(size = 34, hjust = 0.5),
+    plot.caption = element_text(size = 28),
+    legend.position = "right",
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  coord_sf(expand = TRUE, clip = "off")
+
+print(ggSoutheastPrices)
+```
+
+### Midwestern United States Choropleth
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Code Cleaning for Midwestern US Choropleth"
+
+library(tidyverse)
+library(sf)
+library(scales)
+library(stringr)
+library(readr)
+library(grid)  # For unit() usage in legend guides
+
+# 1. Define the Midwestern states you want to include
+midwest_states <- c("minnesota", "wisconsin", "michigan", 
+                    "ohio", "indiana", "illinois", 
+                    "iowa", "missouri")
+
+# 2. Filter your housing data for Midwestern states only
+midwest_data <- naor_housing_clean %>%
+  filter(state %in% midwest_states)
+
+# 3. Read the county shapefile
+county_shapefile <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_county/tl_2024_us_county.shp"
+county_geo_all <- st_read(county_shapefile, quiet = TRUE) %>%
+  mutate(county = str_trim(tolower(NAME)))
+
+# 4. Read the state shapefile
+state_shapefile  <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_state/tl_2024_us_state.shp"
+state_geo_all <- st_read(state_shapefile, quiet = TRUE) %>%
+  mutate(state = str_trim(tolower(NAME))) %>%
+  select(STATEFP, state)
+
+# 5. Convert state_geo_all to a regular data frame by dropping geometry
+state_geo_df_all <- state_geo_all %>%
+  st_drop_geometry()
+
+# 6. Attach state names to the county data and filter for Midwestern states
+county_geo_all <- county_geo_all %>%
+  left_join(state_geo_df_all, by = "STATEFP") %>%
+  mutate(state = str_trim(tolower(state))) %>%
+  filter(state %in% midwest_states)
+
+# 7. Merge the county shapefile with your housing data
+midwest_geo <- county_geo_all %>%
+  left_join(midwest_data, by = c("county", "state")) %>%
+  mutate(
+    median_home_price = ifelse(
+      is.na(median_home_price),
+      median(median_home_price, na.rm = TRUE),
+      median_home_price
+    ),
+    price = median_home_price
+  )
+
+# 8. Create a separate sf object for the state borders (filtered to midwest states)
+state_geo_midwest <- st_read(state_shapefile, quiet = TRUE) %>%
+  mutate(
+    state = str_trim(tolower(NAME))
+  ) %>%
+  filter(state %in% midwest_states)
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Midwestern US Choropleth without Southeastern States"
+#| fig-width: 20
+#| fig-height: 22
+
+library(tidyverse)
+library(sf)
+library(scales)
+library(stringr)
+library(readr)
+library(grid)
+
+# Assume that 'midwest_geo' (the county polygons with housing data for midwestern states)
+# and 'state_geo_midwest' (the state shapefile filtered to midwestern states) 
+# have already been created.
+
+ggMidwestPrices <- ggplot() +
+  # Plot county geometries with thin borders (black)
+  geom_sf(
+    data = midwest_geo, 
+    aes(fill = price), 
+    color = "grey20", 
+    size = 0.1
+  ) +
+  # Overlay state borders using the midwestern state shapefile
+  geom_sf(
+    data = state_geo_midwest,
+    fill = NA,
+    color = "black",
+    size = 3,
+    inherit.aes = FALSE
+  ) +
+  scale_fill_gradient(
+    name = NULL,  # Remove legend title
+    low = "white",
+    high = "darkgreen",
+    na.value = "grey",
+    limits = c(0, 1000000),   # Fixed scale: 0 to $1,000,000
+    labels = scales::label_dollar()
+  ) +
+  labs(
+    title = "County Median Home Prices Q3 2024",
+    subtitle = "Midwestern United States",
+    caption = "Data Source: National Association of Realtors"
+  ) +
+  guides(fill = guide_colorbar(
+    title.theme = element_text(size = 28, hjust = 0.5, margin = margin(b = 10)),
+    label.theme = element_text(size = 24),
+    barheight = unit(10, "cm"),
+    barwidth  = unit(2, "cm"),
+    title.position = "top"
+  )) +
+  theme_linedraw(base_size = 16) +
+  theme(
+    plot.title = element_text(size = 40, hjust = 0.5),
+    plot.subtitle = element_text(size = 34, hjust = 0.5),
+    plot.caption = element_text(size = 28),
+    legend.position = "right",
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  coord_sf(expand = TRUE, clip = "off")
+
+print(ggMidwestPrices)
+```
+
+### Southeastern and Midwestern United States Choropleth
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "SE & MW States Choropleth"
+#| fig-width: 20
+#| fig-height: 25
+
+library(tidyverse)
+library(sf)
+library(scales)
+library(stringr)
+library(readr)
+library(grid)
+
+# 1. Define Southeastern and Midwestern states
+selected_states <- c(
+  # Southeastern
+  "arkansas", "louisiana", "kentucky", "tennessee", "mississippi",
+  "alabama", "georgia", "florida", "north carolina", "south carolina",
+  "virginia", "west virginia",
+  # Midwestern
+  "minnesota", "wisconsin", "michigan", "ohio", "indiana",
+  "illinois", "iowa", "missouri"
+)
+
+# 2. Assume 'naor_housing_clean' is your cleaned dataset with columns:
+#    state (lowercase), county (lowercase), median_home_price (numeric), etc.
+#    We'll rename or create a "price" column for consistency.
+all_housing_data <- naor_housing_clean %>%
+  mutate(price = median_home_price)  # If not already present
+
+# 3. Read the nationwide county shapefile
+county_shapefile <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_county/tl_2024_us_county.shp"
+county_geo_all <- st_read(county_shapefile, quiet = TRUE) %>%
+  mutate(county = str_trim(tolower(NAME)))  # Standardize county name
+
+# 4. Read the nationwide state shapefile
+state_shapefile <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_state/tl_2024_us_state.shp"
+state_geo_all <- st_read(state_shapefile, quiet = TRUE) %>%
+  mutate(state = str_trim(tolower(NAME))) %>%
+  select(STATEFP, state)
+
+# 5. Attach state names to county data via a non-spatial join
+state_geo_df_all <- state_geo_all %>% st_drop_geometry()
+county_geo_all <- county_geo_all %>%
+  left_join(state_geo_df_all, by = "STATEFP") %>%
+  mutate(state = str_trim(tolower(state)))
+
+# 6. Filter counties to just the selected Southeastern & Midwestern states
+county_geo_sel <- county_geo_all %>%
+  filter(state %in% selected_states)
+
+# 7. Merge with housing data
+sel_geo <- county_geo_sel %>%
+  left_join(all_housing_data, by = c("county", "state")) %>%
+  mutate(
+    # Fill missing prices with overall median if desired
+    price = ifelse(is.na(price), median(price, na.rm = TRUE), price)
+  )
+
+# 8. Filter the state shapefile to the same states for borders
+state_geo_sel <- st_read(state_shapefile, quiet = TRUE) %>%
+  mutate(state = str_trim(tolower(NAME))) %>%
+  filter(state %in% selected_states)
+
+# 9. Plot the combined SE & MW states
+ggSEMWPrices <- ggplot() +
+  # Counties
+  geom_sf(
+    data = sel_geo,
+    aes(fill = price),
+    color = "grey20",  # County borders
+    size = 0.1
+  ) +
+  # State borders
+  geom_sf(
+    data = state_geo_sel,
+    fill = NA,
+    color = "black",
+    size = 2
+  ) +
+  scale_fill_gradient(
+    name = NULL,  # No legend title
+    low = "white",
+    high = "darkgreen",
+    na.value = "grey",
+    limits = c(0, 1000000),  # 0 to $1,000,000
+    labels = scales::label_dollar()
+  ) +
+  labs(
+    title = "County Median Home Prices Q3 2024",
+    subtitle = "Southeastern & Midwestern United States",
+    caption = "Data Source: National Association of Realtors"
+  ) +
+  guides(fill = guide_colorbar(
+    label.theme = element_text(size = 24),
+    barheight = unit(10, "cm"),
+    barwidth  = unit(2, "cm"),
+    title.position = "top"
+  )) +
+  theme_linedraw(base_size = 16) +
+  theme(
+    plot.title = element_text(size = 40, hjust = 0.5),
+    plot.subtitle = element_text(size = 34, hjust = 0.5),
+    plot.caption = element_text(size = 28),
+    legend.position = "right",
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  coord_sf(expand = TRUE, clip = "off")
+
+print(ggSEMWPrices)
+```
+
+### Southeastern and Midwestern United States
+
+### Historical HPI Comparison
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Time Series Data Aggregation by Region"
+
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(readr)
+
+# Set the file path and read the Excel data from sheet 2.
+fredHPIData_file_path <- "/Users/cmacbook/Documents/Data Analytics Capstone/fredHPIData.xlsx"
+fredHPIData <- read_xlsx(fredHPIData_file_path, sheet = 2)
+
+# Check column names
+# print(names(fredHPIData))
+# Rename the date column (adjust if needed)
+fredHPIData <- fredHPIData %>%
+  rename(date = observation_date)
+
+# Pivot from wide to long format, selecting all columns that end with "STHPI"
+fredHPIData_long <- fredHPIData %>%
+  pivot_longer(
+    cols = ends_with("STHPI"),
+    names_to = "state_abbr",
+    values_to = "hpi"
+  ) %>%
+  # Remove the "STHPI" suffix so that state_abbr contains just the abbreviation (e.g., "AL")
+  mutate(state_abbr = str_remove(state_abbr, "STHPI"))
+
+# Define state abbreviations for each region.
+southeast_abbr <- c("AR", "LA", "KY", "TN", "MS", "AL", "GA", "FL", "NC", "SC", "VA", "WV")
+midwest_abbr   <- c("MN", "WI", "MI", "OH", "IN", "IL", "IA", "MO")
+
+# Ensure state abbreviations are uppercase and assign a region.
+fredHPIData_long <- fredHPIData_long %>%
+  mutate(
+    state_abbr = toupper(state_abbr),
+    region = case_when(
+      state_abbr %in% southeast_abbr ~ "Southeast",
+      state_abbr %in% midwest_abbr   ~ "Midwest",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(region))  # Keep only states in our defined regions
+
+# Group the data by region and date to calculate the average HPI for each region.
+fredHPIData_regional <- fredHPIData_long %>%
+  group_by(region, date) %>%
+  summarise(avg_hpi = mean(hpi, na.rm = TRUE), .groups = "drop")
+
+# Inspect the aggregated time series data
+# print(fredHPIData_regional)
+
+ggplot(fredHPIData_regional, aes(x = date, y = avg_hpi, color = region)) +
+  geom_line() +
+  scale_color_manual(values = c("Midwest" = "blue2", "Southeast" = "darkgreen")) +
+  labs(title = "Average Housing Price Index by Region",
+       caption = "Data Source: Federal Reserve Bank of St. Louis",
+       color = "Region",
+       x = NULL,
+       y = "Average HPI") +
+  theme_linedraw()
+```
+
+### Southeastern and Midwestern United States ARIMA Forecasting
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "ARIMA Modeling Aggregated by Region"
+
+library(forecast)
+library(lubridate)
+library(ggplot2)
+
+# Suppose you have regional aggregated data in a data frame called 'fredHPIData_regional'
+# with columns: region, date, and avg_hpi
+
+# Split the data by region:
+southeast_ts <- fredHPIData_regional %>%
+  filter(region == "Southeast") %>%
+  arrange(date)
+
+midwest_ts <- fredHPIData_regional %>%
+  filter(region == "Midwest") %>%
+  arrange(date)
+
+# Create time series objects (adjust the start and frequency as needed)
+# Here we assume quarterly data starting in 1975
+southeast_ts_obj <- ts(southeast_ts$avg_hpi, start = c(year(min(southeast_ts$date)), quarter(min(southeast_ts$date))), frequency = 4)
+midwest_ts_obj   <- ts(midwest_ts$avg_hpi, start = c(year(min(midwest_ts$date)), quarter(min(midwest_ts$date))), frequency = 4)
+
+# Fit ARIMA models
+arima_model_se <- auto.arima(southeast_ts_obj)
+arima_model_mw <- auto.arima(midwest_ts_obj)
+
+# Forecast for the same horizon (for example, forecast for 20 quarters)
+horizon <- 20
+forecast_se <- forecast(arima_model_se, h = horizon, level = c(80, 95))
+forecast_mw <- forecast(arima_model_mw, h = horizon, level = c(80, 95))
+
+# Convert forecasts to data frames and add a region label and dates:
+forecast_se_df <- as.data.frame(forecast_se) %>%
+  mutate(Date = seq(from = max(southeast_ts$date) + months(3),
+                    by = "3 months", length.out = nrow(.)),
+         Region = "Southeast")
+
+forecast_mw_df <- as.data.frame(forecast_mw) %>%
+  mutate(Date = seq(from = max(midwest_ts$date) + months(3),
+                    by = "3 months", length.out = nrow(.)),
+         Region = "Midwest")
+
+# Combine the forecast data
+forecast_combined <- bind_rows(forecast_se_df, forecast_mw_df)
+
+# Also combine historical data for plotting
+historical_combined <- fredHPIData_regional %>%
+  rename(HPI = avg_hpi)
+
+# Plot with ggplot2
+ggplot() +
+  # Historical data
+  geom_line(data = historical_combined, aes(x = date, y = HPI, color = region), size = 0.5) +
+  # Forecast lines
+  geom_line(data = forecast_combined, aes(x = Date, y = `Point Forecast`, color = Region), size = .5) +
+  # Confidence intervals for Southeast
+  geom_ribbon(data = forecast_se_df, aes(x = Date, ymin = `Lo 80`, ymax = `Hi 80`, fill = "Southeast 80%"), alpha = 0.5) +
+  geom_ribbon(data = forecast_se_df, aes(x = Date, ymin = `Lo 95`, ymax = `Hi 95`, fill = "Southeast 95%"), alpha = 0.35) +
+  # Confidence intervals for Midwest
+  geom_ribbon(data = forecast_mw_df, aes(x = Date, ymin = `Lo 80`, ymax = `Hi 80`, fill = "Midwest 80%"), alpha = 0.5) +
+  geom_ribbon(data = forecast_mw_df, aes(x = Date, ymin = `Lo 95`, ymax = `Hi 95`, fill = "Midwest 95%"), alpha = 0.35) +
+  scale_color_manual(values = c("Southeast" = "darkgreen", "Midwest" = "darkblue")) +
+  scale_fill_manual(values = c("Southeast 80%" = "seagreen", "Southeast 95%" = "lightgreen", 
+                                "Midwest 80%" = "royalblue1", "Midwest 95%" = "lightblue")) +
+  labs(title = "ARIMA Forecast of Housing Price Index by Region",
+       subtitle = "Historical and Predicted Data (Quarterly)",
+       x = NULL,
+       y = "Housing Price Index",
+       caption = "Source: Federal Reserve Bank of St. Louis",
+       color = "Region",
+       fill = "Confidence Intervals") +
+  theme_linedraw()
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "ARIMA Forecast Table (1975–2030)"
+
+library(tidyverse)
+library(lubridate)
+library(forecast)
+library(readxl)
+library(gt)
+
+# Load the Housing Price Index (HPI) dataset
+fredHPIData_file_path <- "/Users/cmacbook/Documents/Data Analytics Capstone/fredHPIData.xlsx"
+fredHPIData <- read_xlsx(fredHPIData_file_path, sheet = 2)
+
+# Rename the date column if needed
+fredHPIData <- fredHPIData %>%
+  rename(date = observation_date) %>%
+  mutate(date = as.Date(date))  # Ensure it's in Date format
+
+# Convert dataset from wide to long format
+fredHPIData_long <- fredHPIData %>%
+  pivot_longer(
+    cols = ends_with("STHPI"),
+    names_to = "state_abbr",
+    values_to = "hpi"
+  ) %>%
+  mutate(
+    state_abbr = str_remove(state_abbr, "STHPI") # Remove suffix from state abbreviations
+  )
+
+# Define state groups
+southeast_abbr <- c("AR", "LA", "KY", "TN", "MS", "AL", "GA", "FL", "NC", "SC", "VA", "WV")
+midwest_abbr   <- c("MN", "WI", "MI", "OH", "IN", "IL", "IA", "MO")
+
+# Assign region labels
+fredHPIData_long <- fredHPIData_long %>%
+  mutate(
+    state_abbr = toupper(state_abbr),
+    region = case_when(
+      state_abbr %in% southeast_abbr ~ "Southeast",
+      state_abbr %in% midwest_abbr   ~ "Midwest",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(region))  # Keep only relevant states
+
+# Aggregate by region and date (average HPI per region)
+fredHPIData_regional <- fredHPIData_long %>%
+  group_by(region, date) %>%
+  summarise(avg_hpi = mean(hpi, na.rm = TRUE), .groups = "drop")
+
+# Convert to time series format (Quarterly data)
+fredHPIData_regional_ts <- fredHPIData_regional %>%
+  pivot_wider(names_from = region, values_from = avg_hpi) 
+  # Removed the filter to include all years (starting from 1975)
+
+# Create time series objects
+midwest_ts <- ts(fredHPIData_regional_ts$Midwest, start = c(1975, 1), frequency = 4)
+southeast_ts <- ts(fredHPIData_regional_ts$Southeast, start = c(1975, 1), frequency = 4)
+
+# Fit ARIMA models
+arima_model_midwest <- auto.arima(midwest_ts)
+arima_model_southeast <- auto.arima(southeast_ts)
+
+quarters_to_forecast <- 8
+forecast_midwest <- forecast(arima_model_midwest, h = quarters_to_forecast, level = c(80, 95))
+forecast_southeast <- forecast(arima_model_southeast, h = quarters_to_forecast, level = c(80, 95))
+
+# Convert forecasts to data frames
+forecast_midwest_df <- as.data.frame(forecast_midwest) %>%
+  mutate(
+    Date = seq(from = max(fredHPIData_regional_ts$date) + months(3), 
+               by = "3 months", 
+               length.out = nrow(.)),
+    Region = "Midwest"
+  ) %>%
+  rename(
+    `Forecast HPI` = `Point Forecast`,
+    `Lower 80%` = `Lo 80`,
+    `Upper 80%` = `Hi 80`,
+    `Lower 95%` = `Lo 95`,
+    `Upper 95%` = `Hi 95`
+  )
+
+forecast_southeast_df <- as.data.frame(forecast_southeast) %>%
+  mutate(
+    Date = seq(from = max(fredHPIData_regional_ts$date) + months(3), 
+               by = "3 months", 
+               length.out = nrow(.)),
+    Region = "Southeast"
+  ) %>%
+  rename(
+    `Forecast HPI` = `Point Forecast`,
+    `Lower 80%` = `Lo 80`,
+    `Upper 80%` = `Hi 80`,
+    `Lower 95%` = `Lo 95`,
+    `Upper 95%` = `Hi 95`
+  )
+
+# Combine both forecasts
+forecast_table <- bind_rows(forecast_midwest_df, forecast_southeast_df) %>%
+  select(Region, Date, `Forecast HPI`, `Lower 80%`, `Upper 80%`, `Lower 95%`, `Upper 95%`)
+
+# Generate the table using gt()
+forecast_table %>%
+  gt() %>%
+  tab_header(
+    title = "ARIMA Forecast of Housing Price Index (1975–2030)",
+    subtitle = "Forecasted HPI Values with 80% and 95% Confidence Intervals"
+  ) %>%
+  fmt_number(
+    columns = vars(`Forecast HPI`, `Lower 80%`, `Upper 80%`, `Lower 95%`, `Upper 95%`),
+    decimals = 2
+  ) %>%
+  cols_label(
+    Region = "Region",
+    Date = "Forecast Date",
+    `Forecast HPI` = "HPI Forecast",
+    `Lower 80%` = "Lower 80%",
+    `Upper 80%` = "Upper 80%",
+    `Lower 95%` = "Lower 95%",
+    `Upper 95%` = "Upper 95%"
+  ) %>%
+  tab_source_note(
+    source_note = "Source: Federal Reserve Bank of St. Louis (FRED)"
+  ) %>%
+  tab_options(
+    table.font.size = "small",
+    column_labels.font.weight = "bold",
+    table.border.top.width = px(2),
+    table.border.bottom.width = px(2),
+    heading.align = "center")
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "ARIMA Summary Table (1975–2030)"
+
+library(gt)
+library(dplyr)
+library(forecast)
+library(lubridate)
+
+# Extract only the first three numbers from the ARIMA model order
+arima_model_midwest_order <- arimaorder(arima_model_midwest)[1:3]
+arima_model_southeast_order <- arimaorder(arima_model_southeast)[1:3]
+
+# Latest Historical HPI values
+latest_hpi_midwest <- tail(fredHPIData_regional %>% filter(region == "Midwest"), 1)$avg_hpi
+latest_hpi_southeast <- tail(fredHPIData_regional %>% filter(region == "Southeast"), 1)$avg_hpi
+
+# Forecast start & end dates
+forecast_start <- max(fredHPIData_regional_ts$date) + months(3)  # First forecasted quarter
+forecast_end <- forecast_start + months((quarters_to_forecast - 1) * 3)  # Last forecasted quarter
+
+# Extract summary statistics from forecasts
+mean_forecast_midwest <- mean(forecast_midwest$mean)
+mean_forecast_southeast <- mean(forecast_southeast$mean)
+
+# 80% Confidence Interval
+ci_80_lower_midwest <- mean(forecast_midwest$lower[,1])  # Lower bound
+ci_80_upper_midwest <- mean(forecast_midwest$upper[,1])  # Upper bound
+ci_80_lower_southeast <- mean(forecast_southeast$lower[,1])
+ci_80_upper_southeast <- mean(forecast_southeast$upper[,1])
+
+# 95% Confidence Interval
+ci_95_lower_midwest <- mean(forecast_midwest$lower[,2])  # Lower bound
+ci_95_upper_midwest <- mean(forecast_midwest$upper[,2])  # Upper bound
+ci_95_lower_southeast <- mean(forecast_southeast$lower[,2])
+ci_95_upper_southeast <- mean(forecast_southeast$upper[,2])
+
+# Create summary table
+arima_summary_table <- tibble(
+  Region = c("Midwest", "Southeast"),
+  `ARIMA Model` = c(
+    paste0("ARIMA(", paste(arima_model_midwest_order, collapse = ","), ")"),
+    paste0("ARIMA(", paste(arima_model_southeast_order, collapse = ","), ")")
+  ),
+  `Latest Historical HPI` = c(latest_hpi_midwest, latest_hpi_southeast),
+  `Forecast Start Date` = rep(as.character(forecast_start), 2),
+  `Forecast End Date` = rep(as.character(forecast_end), 2),
+  `Mean Forecasted HPI` = c(mean_forecast_midwest, mean_forecast_southeast),
+  `80% CI Lower` = c(ci_80_lower_midwest, ci_80_lower_southeast),
+  `80% CI Upper` = c(ci_80_upper_midwest, ci_80_upper_southeast),
+  `95% CI Lower` = c(ci_95_lower_midwest, ci_95_lower_southeast),
+  `95% CI Upper` = c(ci_95_upper_midwest, ci_95_upper_southeast)
+)
+
+# Generate gt() table
+arima_summary_table %>%
+  gt() %>%
+  tab_header(
+    title = "Summary of Housing Price Index Forecasts (1975–2030)",
+    subtitle = "Southeastern and Midwestern Regions"
+  ) %>%
+  fmt_number(
+    columns = vars(`Latest Historical HPI`, `Mean Forecasted HPI`, `80% CI Lower`, `80% CI Upper`, `95% CI Lower`, `95% CI Upper`),
+    decimals = 2
+  ) %>%
+  cols_label(
+    Region = "Region",
+    `ARIMA Model` = "ARIMA Model",
+    `Latest Historical HPI` = "Latest Historical HPI",
+    `Forecast Start Date` = "Forecast Start Date",
+    `Forecast End Date` = "Forecast End Date",
+    `Mean Forecasted HPI` = "Mean Forecasted HPI",
+    `80% CI Lower` = "80% CI Lower",
+    `80% CI Upper` = "80% CI Upper",
+    `95% CI Lower` = "95% CI Lower",
+    `95% CI Upper` = "95% CI Upper"
+  ) %>%
+  tab_source_note(
+    source_note = "Source: Federal Reserve Bank of St. Louis (FRED)"
+  ) %>%
+  tab_options(
+    table.font.size = "small",
+    column_labels.font.weight = "bold",
+    table.border.top.width = px(2),
+    table.border.bottom.width = px(2),
+    heading.align = "center")
+```
+
+### Zillow Housing Data Scatterplot
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Zillow Housing Data Time Series Scatterplot"
+
+library(tidyverse)
+library(lubridate)
+library(readr)
+library(scales)
+
+zillow_file_path <- "/Users/cmacbook/Documents/Data Analytics Capstone/zillowCountyData.csv"
+
+zillow_data <- read_csv(zillow_file_path)
+
+southeast_states <- c("AR", "LA", "KY", "TN", "MS", "AL", "GA", "FL", "NC", "SC", "VA", "WV")
+midwest_states <- c("MN", "WI", "MI", "OH", "IN", "IL", "IA", "MO")
+
+# Filter for only Southeastern and Midwestern counties
+zillow_filtered <- zillow_data %>%
+  filter(State %in% c(southeast_states, midwest_states))
+
+# Convert data from wide to long format (Date format)
+zillow_long <- zillow_filtered %>%
+  pivot_longer(
+    cols = matches("^\\d{4}-\\d{2}-\\d{2}$"), # Select date columns
+    names_to = "Date",
+    values_to = "Home_Price"
+  ) %>%
+  mutate(
+    Date = as.Date(Date),
+    Quarter = floor_date(Date, "quarter"),  # Group into quarterly periods
+    Region = case_when(
+      State %in% southeast_states ~ "Southeast",
+      State %in% midwest_states ~ "Midwest"
+    )
+  )
+
+# Compute the average home price per state per quarter
+zillow_quarterly_avg <- zillow_long %>%
+  group_by(State, Quarter, Region) %>%
+  summarise(Average_Home_Price = mean(Home_Price, na.rm = TRUE), .groups = "drop")
+
+# Randomly sample points to prevent overcrowding
+set.seed(123)  # For reproducibility
+zillow_sample <- zillow_quarterly_avg %>%
+  sample_frac(0.40)
+
+# Create scatter plot with jittering
+ggplot(zillow_sample, aes(x = Quarter, y = Average_Home_Price, color = Region)) +
+  geom_point(alpha = 0.6, size = 1.5, position = position_jitter(width = 100, height = 0)) +  # Jitter on x-axis
+  scale_color_manual(values = c("Midwest" = "darkblue", "Southeast" = "darkgreen")) +
+  scale_y_continuous(labels = label_dollar()) +  # Format y-axis as dollar amounts with commas
+  labs(
+    title = "Zillow Home Price Estimates by State",
+    subtitle = "Random Sample from Zillow Data",
+    x = NULL,
+    y = "Average Home Price (USD)",
+    color = "Region"
+  ) +
+  theme_linedraw() +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Zillow Housing Data ARIMA Forecasting Code Cleaning"
+
+library(tidyverse)
+library(lubridate)
+library(forecast)
+library(readr)
+library(scales)
+
+# Define file path
+zillow_file_path <- "/Users/cmacbook/Documents/Data Analytics Capstone/zillowCountyData.csv"
+
+# Read in the Zillow data
+zillow_data <- read_csv(zillow_file_path)
+
+# Define the states for each region
+southeast_states <- c("AR", "LA", "KY", "TN", "MS", "AL", "GA", "FL", "NC", "SC", "VA", "WV")
+midwest_states <- c("MN", "WI", "MI", "OH", "IN", "IL", "IA", "MO")
+
+# Filter for only Southeastern and Midwestern counties
+zillow_filtered <- zillow_data %>%
+  filter(State %in% c(southeast_states, midwest_states))
+
+# Convert data from wide to long format (Date format)
+zillow_long <- zillow_filtered %>%
+  pivot_longer(
+    cols = matches("^\\d{4}-\\d{2}-\\d{2}$"), # Select date columns
+    names_to = "Date",
+    values_to = "Home_Price"
+  ) %>%
+  mutate(
+    Date = as.Date(Date),
+    Quarter = floor_date(Date, "quarter"),  # Group into quarterly periods
+    Region = case_when(
+      State %in% southeast_states ~ "Southeast",
+      State %in% midwest_states ~ "Midwest"
+    )
+  )
+
+# Compute the average home price per region per quarter
+zillow_quarterly_avg <- zillow_long %>%
+  group_by(Quarter, Region) %>%
+  summarise(Average_Home_Price = mean(Home_Price, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = Region, values_from = Average_Home_Price)
+
+# Convert to time series format (Quarterly data)
+zillow_ts <- zillow_quarterly_avg %>%
+  filter(Quarter >= as.Date("2000-01-01"))  # Keep only 2000 onward
+
+midwest_ts <- ts(zillow_ts$Midwest, start = c(2000, 1), frequency = 4)
+southeast_ts <- ts(zillow_ts$Southeast, start = c(2000, 1), frequency = 4)
+
+# Fit ARIMA models
+arima_model_midwest <- auto.arima(midwest_ts)
+arima_model_southeast <- auto.arima(southeast_ts)
+
+# Forecast for the next 10 years (40 quarters)
+quarters_to_forecast <- 16
+forecast_midwest <- forecast(arima_model_midwest, h = quarters_to_forecast, level = c(80, 95))
+forecast_southeast <- forecast(arima_model_southeast, h = quarters_to_forecast, level = c(80, 95))
+
+# Convert forecasts to data frames
+forecast_midwest_df <- as.data.frame(forecast_midwest) %>%
+  mutate(
+    Date = seq(from = max(zillow_ts$Quarter) + months(3), 
+               by = "3 months", 
+               length.out = nrow(.)),
+    Region = "Midwest"
+  ) %>%
+  rename(
+    `Forecast HPI` = `Point Forecast`,
+    `Lower 80%` = `Lo 80`,
+    `Upper 80%` = `Hi 80`,
+    `Lower 95%` = `Lo 95`,
+    `Upper 95%` = `Hi 95`
+  )
+
+forecast_southeast_df <- as.data.frame(forecast_southeast) %>%
+  mutate(
+    Date = seq(from = max(zillow_ts$Quarter) + months(3), 
+               by = "3 months", 
+               length.out = nrow(.)),
+    Region = "Southeast"
+  ) %>%
+  rename(
+    `Forecast HPI` = `Point Forecast`,
+    `Lower 80%` = `Lo 80`,
+    `Upper 80%` = `Hi 80`,
+    `Lower 95%` = `Lo 95`,
+    `Upper 95%` = `Hi 95`
+  )
+
+# Historical data for plotting
+historical_midwest <- zillow_ts %>%
+  select(Quarter, Midwest) %>%
+  rename(Date = Quarter, HPI = Midwest) %>%
+  mutate(Region = "Midwest")
+
+historical_southeast <- zillow_ts %>%
+  select(Quarter, Southeast) %>%
+  rename(Date = Quarter, HPI = Southeast) %>%
+  mutate(Region = "Southeast")
+
+# Combine historical and forecasted data
+forecast_combined <- bind_rows(
+  forecast_midwest_df %>% rename(HPI = `Forecast HPI`),
+  forecast_southeast_df %>% rename(HPI = `Forecast HPI`),
+  historical_midwest,
+  historical_southeast
+) %>%
+  mutate(Date = as.Date(Date))  # Ensure Date format
+
+```
+
+### Zillow Housing Data ARIMA Forecast
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Zillow Housing Data ARIMA forecasting"
+
+library(tidyverse)
+library(lubridate)
+library(forecast)
+library(readr)
+library(scales)
+
+# Plot the ARIMA forecast
+ggplot(data = forecast_combined, aes(x = Date, y = HPI, color = Region)) +
+  geom_line(data = filter(forecast_combined, Date <= max(historical_midwest$Date)), 
+            aes(color = Region), size = 0.5, linetype = "solid") +  # Historical data
+  geom_line(size = 0.5) +
+  geom_ribbon(data = forecast_midwest_df, aes(x = Date, ymin = `Lower 80%`, ymax = `Upper 80%`, fill = "Midwest 80%"), 
+              alpha = 0.5, inherit.aes = FALSE) +  # 80% Confidence interval for Midwest
+  geom_ribbon(data = forecast_midwest_df, aes(x = Date, ymin = `Lower 95%`, ymax = `Upper 95%`, fill = "Midwest 95%"), 
+              alpha = 0.35, inherit.aes = FALSE) +  # 95% Confidence interval for Midwest
+  geom_ribbon(data = forecast_southeast_df, aes(x = Date, ymin = `Lower 80%`, ymax = `Upper 80%`, fill = "Southeast 80%"), 
+              alpha = 0.5, inherit.aes = FALSE) +  # 80% Confidence interval for Southeast
+  geom_ribbon(data = forecast_southeast_df, aes(x = Date, ymin = `Lower 95%`, ymax = `Upper 95%`, fill = "Southeast 95%"), 
+              alpha = 0.35, inherit.aes = FALSE) +  # 95% Confidence interval for Southeast
+  scale_color_manual(values = c("Midwest" = "darkblue", "Southeast" = "darkgreen")) +
+  scale_fill_manual(
+    values = c("Midwest 80%" = "royalblue1", "Midwest 95%" = "lightblue3", 
+               "Southeast 80%" = "palegreen4", "Southeast 95%" = "palegreen"),
+    name = "Confidence Intervals") +
+  scale_y_continuous(labels = label_dollar()) +
+  scale_x_date(
+    breaks = seq(as.Date("2000-01-01"), as.Date("2035-01-01"), by = "5 years"),
+    labels = scales::label_date(format = "%Y")
+  ) +
+  labs(
+    title = "ARIMA Forecast of Zillow Home Price Estimates",
+    subtitle = "Historical and Predicted Data (Quarterly)",
+    x = NULL,
+    y = "Average Home Price (USD)",
+    color = "Region"
+  ) +
+  theme_linedraw()
+```
+
+### 
