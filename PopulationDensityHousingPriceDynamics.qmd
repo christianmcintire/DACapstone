@@ -110,27 +110,6 @@ summary <- data %>%
 summary
 ```
 
-### Rayshader Prerender Testing
-
-```{r}
-#| echo: true
-#| message: false
-#| warning: false
-#| error: false
-#| code-fold: false
-#| include: true
-
-# Test Rayshader plot
-library(rayshader)
-
-volcano %>%
-  sphere_shade(texture = "imhof1") %>%
-  plot_3d(volcano, zscale = 10, theta = 30, phi = 40)
-
-# Render the plot to view it interactively
-rgl::rglwidget()
-```
-
 ### NAOR Dataset Cleaning
 
 ```{r}
@@ -144,16 +123,17 @@ library(readr)
 library(readxl)
 library(stringr)
 library(tidyverse)
+library(broom)
 
-# Define the file path for the Excel file
+# 1. Define file path to the Excel dataset
 file_path <- "/Users/cmacbook/Documents/Data Analytics Capstone/naorMedianHomePriceData.xlsx"
 
-# Read the Excel data (assuming data is in the first sheet)
+# 2. Read in the Excel data (Sheet 1)
 naor_housing_data <- read_xlsx(file_path, sheet = 1)
 
-# Clean the data
+# 3. Clean and format the dataset
 naor_housing_clean <- naor_housing_data %>%
-  # Rename columns for ease of use
+  # Rename columns for clarity
   rename(
     state = State,
     county = countyName,
@@ -169,12 +149,11 @@ naor_housing_clean <- naor_housing_data %>%
     monthly_payment_q32024 = str_replace_all(monthly_payment_q32024, "[$,]", "") %>% as.numeric(),
     monthly_payment_q32023 = str_replace_all(monthly_payment_q32023, "[$,]", "") %>% as.numeric()
   ) %>%
-  # Ensure each county-state pair is unique
+  # Ensure unique county-state pairs
   distinct(county, state, .keep_all = TRUE)
 
-# Display a summary of the cleaned data
+# 4. Optional: View the cleaned data
 # view(naor_housing_clean)
-
 ```
 
 ### Shapefiles for Choropleths - United States Census Bureau
@@ -197,7 +176,7 @@ county_shapes <- st_read(county_shapefile, quiet = TRUE)
 state_shapes  <- st_read(state_shapefile, quiet = TRUE)
 ```
 
-### Southeastern United States Choropleth
+#### Figure 1: Southeastern United States Choropleth
 
 ```{r}
 #| echo: true
@@ -312,7 +291,7 @@ naor_housing_clean <- naor_housing_clean %>%
 #| message: false
 #| warning: false
 #| code-fold: true
-#| code-summary: "Southeastern US Choropleth with State Borders"
+#| code-summary: "Figure 1: Southeastern US Choropleth with State Borders"
 #| fig-width: 25
 #| fig-height: 20
 
@@ -361,7 +340,7 @@ ggSoutheastPrices <- ggplot() +
     labels = scales::label_dollar()
   ) +
   labs(
-    title = "County Median Home Prices Q3 2024",
+    title = "Figure 1: County Median Home Prices Q3 2024",
     subtitle = "Southeastern United States",
     caption = "Data Source: National Association of Realtors"
   ) +
@@ -389,7 +368,7 @@ ggSoutheastPrices <- ggplot() +
 print(ggSoutheastPrices)
 ```
 
-### Midwestern United States Choropleth
+#### Figure 2: Midwestern United States Choropleth
 
 ```{r}
 #| echo: true
@@ -460,7 +439,7 @@ state_geo_midwest <- st_read(state_shapefile, quiet = TRUE) %>%
 #| message: false
 #| warning: false
 #| code-fold: true
-#| code-summary: "Midwestern US Choropleth without Southeastern States"
+#| code-summary: "Figure 2: Midwestern US Choropleth"
 #| fig-width: 20
 #| fig-height: 22
 
@@ -500,7 +479,7 @@ ggMidwestPrices <- ggplot() +
     labels = scales::label_dollar()
   ) +
   labs(
-    title = "County Median Home Prices Q3 2024",
+    title = "Figure 2: County Median Home Prices Q3 2024",
     subtitle = "Midwestern United States",
     caption = "Data Source: National Association of Realtors"
   ) +
@@ -528,14 +507,14 @@ ggMidwestPrices <- ggplot() +
 print(ggMidwestPrices)
 ```
 
-### Southeastern and Midwestern United States Choropleth
+#### Figure 3: Southeastern and Midwestern United States Choropleth
 
 ```{r}
 #| echo: true
 #| message: false
 #| warning: false
 #| code-fold: true
-#| code-summary: "SE & MW States Choropleth"
+#| code-summary: "Figure 3: SE & MW States Choropleth"
 #| fig-width: 20
 #| fig-height: 25
 
@@ -622,7 +601,7 @@ ggSEMWPrices <- ggplot() +
     labels = scales::label_dollar()
   ) +
   labs(
-    title = "County Median Home Prices Q3 2024",
+    title = "Figure 3: County Median Home Prices Q3 2024",
     subtitle = "Southeastern & Midwestern United States",
     caption = "Data Source: National Association of Realtors"
   ) +
@@ -651,14 +630,14 @@ print(ggSEMWPrices)
 
 ### Southeastern and Midwestern United States
 
-### Historical HPI Comparison
+#### Figure 4: Historical HPI Comparison
 
 ```{r}
 #| echo: true
 #| message: false
 #| warning: false
 #| code-fold: true
-#| code-summary: "Time Series Data Aggregation by Region"
+#| code-summary: "Figure 4: Time Series Data Aggregation by Region"
 
 library(tidyverse)
 library(lubridate)
@@ -712,7 +691,7 @@ fredHPIData_regional <- fredHPIData_long %>%
 ggplot(fredHPIData_regional, aes(x = date, y = avg_hpi, color = region)) +
   geom_line() +
   scale_color_manual(values = c("Midwest" = "blue2", "Southeast" = "darkgreen")) +
-  labs(title = "Average Housing Price Index by Region",
+  labs(title = "Figure 4: Average Housing Price Index by Region",
        caption = "Data Source: Federal Reserve Bank of St. Louis",
        color = "Region",
        x = NULL,
@@ -720,14 +699,14 @@ ggplot(fredHPIData_regional, aes(x = date, y = avg_hpi, color = region)) +
   theme_linedraw()
 ```
 
-### Southeastern and Midwestern United States ARIMA Forecasting
+#### Figure 5: Southeastern and Midwestern United States ARIMA Forecasting
 
 ```{r}
 #| echo: true
 #| message: false
 #| warning: false
 #| code-fold: true
-#| code-summary: "ARIMA Modeling Aggregated by Region"
+#| code-summary: "Figure 5: ARIMA Modeling Aggregated by Region"
 
 library(forecast)
 library(lubridate)
@@ -792,7 +771,7 @@ ggplot() +
   scale_color_manual(values = c("Southeast" = "darkgreen", "Midwest" = "darkblue")) +
   scale_fill_manual(values = c("Southeast 80%" = "seagreen", "Southeast 95%" = "lightgreen", 
                                 "Midwest 80%" = "royalblue1", "Midwest 95%" = "lightblue")) +
-  labs(title = "ARIMA Forecast of Housing Price Index by Region",
+  labs(title = "Figure 5: ARIMA Forecast of Housing Price Index by Region",
        subtitle = "Historical and Predicted Data (Quarterly)",
        x = NULL,
        y = "Housing Price Index",
@@ -802,12 +781,14 @@ ggplot() +
   theme_linedraw()
 ```
 
+#### ARIMA Forecast Table (1975–2030)
+
 ```{r}
 #| echo: true
 #| message: false
 #| warning: false
 #| code-fold: true
-#| code-summary: "ARIMA Forecast Table (1975–2030)"
+#| code-summary: "ARIMA Forecast Table (1975–2030) For Reference Only"
 
 library(tidyverse)
 library(lubridate)
@@ -939,12 +920,14 @@ forecast_table %>%
     heading.align = "center")
 ```
 
+#### Table 1: ARIMA Summary Table of Housing Price Index Forecasts
+
 ```{r}
 #| echo: true
 #| message: false
 #| warning: false
 #| code-fold: true
-#| code-summary: "ARIMA Summary Table (1975–2030)"
+#| code-summary: "Table 1: Summary of Housing Price Index Forecasts (1975–2030)"
 
 library(gt)
 library(dplyr)
@@ -952,6 +935,8 @@ library(forecast)
 library(lubridate)
 
 # Extract only the first three numbers from the ARIMA model order
+arima_model_midwest <- auto.arima(midwest_ts)
+arima_model_southeast <- auto.arima(southeast_ts)
 arima_model_midwest_order <- arimaorder(arima_model_midwest)[1:3]
 arima_model_southeast_order <- arimaorder(arima_model_southeast)[1:3]
 
@@ -1000,7 +985,7 @@ arima_summary_table <- tibble(
 arima_summary_table %>%
   gt() %>%
   tab_header(
-    title = "Summary of Housing Price Index Forecasts (1975–2030)",
+    title = "Table 1: Summary of Housing Price Index Forecasts (1975–2030)",
     subtitle = "Southeastern and Midwestern Regions"
   ) %>%
   fmt_number(
@@ -1030,14 +1015,14 @@ arima_summary_table %>%
     heading.align = "center")
 ```
 
-### Zillow Housing Data Scatterplot
+#### Figure 6: Zillow Housing Data Scatterplot
 
 ```{r}
 #| echo: true
 #| message: false
 #| warning: false
 #| code-fold: true
-#| code-summary: "Zillow Housing Data Time Series Scatterplot"
+#| code-summary: "Figure 6: Zillow Housing Data Time Series Scatterplot"
 
 library(tidyverse)
 library(lubridate)
@@ -1083,11 +1068,11 @@ zillow_sample <- zillow_quarterly_avg %>%
 
 # Create scatter plot with jittering
 ggplot(zillow_sample, aes(x = Quarter, y = Average_Home_Price, color = Region)) +
-  geom_point(alpha = 0.6, size = 1.5, position = position_jitter(width = 100, height = 0)) +  # Jitter on x-axis
+  geom_point(alpha = 0.6, size = 0.8, position = position_jitter(width = 100, height = 0)) +  # Jitter on x-axis
   scale_color_manual(values = c("Midwest" = "darkblue", "Southeast" = "darkgreen")) +
   scale_y_continuous(labels = label_dollar()) +  # Format y-axis as dollar amounts with commas
   labs(
-    title = "Zillow Home Price Estimates by State",
+    title = "Figure 6: Zillow Home Price Estimates by State",
     subtitle = "Random Sample from Zillow Data",
     x = NULL,
     y = "Average Home Price (USD)",
@@ -1219,7 +1204,7 @@ forecast_combined <- bind_rows(
 
 ```
 
-### Zillow Housing Data ARIMA Forecast
+#### Figure 7: Zillow Housing Data ARIMA Forecast
 
 ```{r}
 #| echo: true
@@ -1258,7 +1243,7 @@ ggplot(data = forecast_combined, aes(x = Date, y = HPI, color = Region)) +
     labels = scales::label_date(format = "%Y")
   ) +
   labs(
-    title = "ARIMA Forecast of Zillow Home Price Estimates",
+    title = "Figure 7: ARIMA Forecast of Zillow Home Price Estimates",
     subtitle = "Historical and Predicted Data (Quarterly)",
     x = NULL,
     y = "Average Home Price (USD)",
@@ -1267,4 +1252,765 @@ ggplot(data = forecast_combined, aes(x = Date, y = HPI, color = Region)) +
   theme_linedraw()
 ```
 
-### 
+#### Table 2: Zillow Home Price Estimates - ARIMA Model Summary Table
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Table 2: Zillow ARIMA Summary Table"
+
+library(gt)
+library(dplyr)
+library(forecast)
+library(lubridate)
+
+# 1. Extract only the first three numbers from the ARIMA model order
+zillow_arima_model_midwest_order <- arimaorder(arima_model_midwest)[1:3]
+zillow_arima_model_southeast_order <- arimaorder(arima_model_southeast)[1:3]
+
+# 2. Get the latest historical HPI values from your "historical_midwest" and "historical_southeast" data frames
+latest_hpi_midwest_zillow <- tail(historical_midwest, 1)$HPI
+latest_hpi_southeast_zillow <- tail(historical_southeast, 1)$HPI
+
+# 3. Define forecast start & end dates from your forecast data frames
+zillow_forecast_start <- min(forecast_midwest_df$Date)  # or max(...) + months(3) if you prefer
+zillow_forecast_end <- max(forecast_midwest_df$Date)
+
+# 4. Calculate mean forecasts
+zillow_mean_forecast_midwest <- mean(forecast_midwest$mean)
+zillow_mean_forecast_southeast <- mean(forecast_southeast$mean)
+
+# 5. Extract average 80% & 95% confidence intervals
+zillow_ci_80_lower_midwest <- mean(forecast_midwest$lower[,1])
+zillow_ci_80_upper_midwest <- mean(forecast_midwest$upper[,1])
+zillow_ci_80_lower_southeast <- mean(forecast_southeast$lower[,1])
+zillow_ci_80_upper_southeast <- mean(forecast_southeast$upper[,1])
+
+zillow_ci_95_lower_midwest <- mean(forecast_midwest$lower[,2])
+zillow_ci_95_upper_midwest <- mean(forecast_midwest$upper[,2])
+zillow_ci_95_lower_southeast <- mean(forecast_southeast$lower[,2])
+zillow_ci_95_upper_southeast <- mean(forecast_southeast$upper[,2])
+
+# 6. Create a tibble for the summary table
+zillow_arima_summary_table <- tibble(
+  Region = c("Midwest", "Southeast"),
+  `ARIMA Model` = c(
+    paste0("ARIMA(", paste(zillow_arima_model_midwest_order, collapse = ","), ")"),
+    paste0("ARIMA(", paste(zillow_arima_model_southeast_order, collapse = ","), ")")
+  ),
+  `Latest Historical HPI` = c(latest_hpi_midwest_zillow, latest_hpi_southeast_zillow),
+  `Forecast Start Date` = rep(as.character(zillow_forecast_start), 2),
+  `Forecast End Date` = rep(as.character(zillow_forecast_end), 2),
+  `Mean Forecasted HPI` = c(zillow_mean_forecast_midwest, zillow_mean_forecast_southeast),
+  `80% CI Lower` = c(zillow_ci_80_lower_midwest, zillow_ci_80_lower_southeast),
+  `80% CI Upper` = c(zillow_ci_80_upper_midwest, zillow_ci_80_upper_southeast),
+  `95% CI Lower` = c(zillow_ci_95_lower_midwest, zillow_ci_95_lower_southeast),
+  `95% CI Upper` = c(zillow_ci_95_upper_midwest, zillow_ci_95_upper_southeast)
+)
+
+# 7. Render the table with gt()
+zillow_arima_summary_table %>%
+  gt() %>%
+  tab_header(
+    title = "Table 2: Summary of Zillow Home Price Forecasts (2000–2030)",
+    subtitle = "Southeastern and Midwestern Regions"
+  ) %>%
+  fmt_number(
+    columns = vars(
+      `Latest Historical HPI`, 
+      `Mean Forecasted HPI`, 
+      `80% CI Lower`, 
+      `80% CI Upper`, 
+      `95% CI Lower`, 
+      `95% CI Upper`
+    ),
+    decimals = 2
+  ) %>%
+  cols_label(
+    Region = "Region",
+    `ARIMA Model` = "ARIMA Model",
+    `Latest Historical HPI` = "Latest Historical HPI",
+    `Forecast Start Date` = "Forecast Start Date",
+    `Forecast End Date` = "Forecast End Date",
+    `Mean Forecasted HPI` = "Mean Forecasted HPI",
+    `80% CI Lower` = "80% CI Lower",
+    `80% CI Upper` = "80% CI Upper",
+    `95% CI Lower` = "95% CI Lower",
+    `95% CI Upper` = "95% CI Upper"
+  ) %>%
+  tab_source_note(
+    source_note = "Source: Zillow Research (2024)"
+  ) %>%
+  tab_options(
+    table.font.size = "small",
+    column_labels.font.weight = "bold",
+    table.border.top.width = px(2),
+    table.border.bottom.width = px(2),
+    heading.align = "center"
+  )
+```
+
+# Hedonic Modeling
+
+### Code Cleaning
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Hedonic Modeling Dataset Merging"
+
+library(tidyverse)
+library(readxl)
+library(stringr)
+
+census_file_path <- "/Users/cmacbook/Documents/Data Analytics Capstone/usCensusData.xlsx"
+
+census_data_new <- read_xlsx(census_file_path, sheet = 2)
+
+census_data_new <- census_data_new %>%
+  rename(CountyState = `County`) %>%
+  mutate(
+    CountyState = str_remove(CountyState, "^\\."),        # Remove leading dot.
+    County = word(CountyState, 1, sep = ","),              # Extract county name (before comma).
+    State = word(CountyState, 2, sep = ","),               # Extract state (after comma).
+    County = str_trim(County),
+    State = str_trim(State),
+    County = str_to_upper(County),
+    State = str_to_upper(State)
+  ) %>%
+  # 1.4 Select only the relevant columns.
+  select(County, State, `2020_pop`, `2021_pop`, `2022_pop`, `2023_pop`)
+
+naor_file_path <- "/Users/cmacbook/Documents/Data Analytics Capstone/naorMedianHomePriceData.xlsx"
+
+naor_data <- read_xlsx(naor_file_path, sheet = 1) %>%
+  rename(
+    state = State,
+    county = countyName,
+    median_home_price = medianHomePriceQ32024,
+    monthly_payment_q32024 = monthlyPaymentQ32024,
+    monthly_payment_q32023 = monthlyPaymentQ32023
+  ) %>%
+  mutate(
+    # 2.3 Convert state and county names to uppercase and trim whitespace to match Census.
+    state = str_to_upper(str_trim(state)),
+    county = str_to_upper(str_trim(county))
+  )
+
+
+combined_data <- naor_data %>%
+  left_join(census_data_new, by = c("county" = "County", "state" = "State"))
+
+
+```
+
+#### Figure 8: Southeastern and Midwestern County Population Choropleth
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Figure 8: Choropleth of 2023 County Population"
+#| fig-width: 20
+#| fig-height: 25
+
+library(readxl)
+library(tidyverse)
+library(sf)
+library(scales)
+library(stringr)
+
+# 1. Load 2023 population data from Excel (Sheet 2)
+census_data <- read_xlsx("/Users/cmacbook/Documents/Data Analytics Capstone/usCensusData.xlsx", sheet = 2)
+
+# 2. Clean and split county/state names
+census_clean <- census_data %>%
+  mutate(
+    County = str_remove(County, "^\\."),  # remove leading dot
+    county = word(County, 1, -2, sep = ", ") %>% str_trim() %>% str_to_lower() %>% str_remove("\\scounty$|\\sparish$|\\scity$"),
+    state = word(County, -1, sep = ", ") %>% str_trim() %>% str_to_lower()
+  ) %>%
+  mutate(`2023_pop` = as.numeric(`2023_pop`))  # ensure numeric
+
+# 3. Define SE & MW states
+selected_states <- c(
+  # Southeastern
+  "alabama", "arkansas", "louisiana", "kentucky", "tennessee", "mississippi",
+  "georgia", "florida", "north carolina", "south carolina", "virginia", "west virginia",
+  # Midwestern
+  "minnesota", "wisconsin", "michigan", "ohio", "indiana",
+  "illinois", "iowa", "missouri"
+)
+
+# 4. Load and clean shapefiles
+county_shapefile <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_county/tl_2024_us_county.shp"
+state_shapefile <- "/Users/cmacbook/Documents/Data Analytics Capstone/ShapeFiles/tl_2024_us_state/tl_2024_us_state.shp"
+
+county_geo <- st_read(county_shapefile, quiet = TRUE) %>%
+  mutate(county = str_trim(tolower(NAME)))
+
+state_geo <- st_read(state_shapefile, quiet = TRUE) %>%
+  mutate(state = str_trim(tolower(NAME))) %>%
+  select(STATEFP, state)
+
+# 5. Join state info to counties
+state_geo_df <- st_drop_geometry(state_geo)
+county_geo <- county_geo %>%
+  left_join(state_geo_df, by = "STATEFP") %>%
+  mutate(
+    county = str_remove(county, "\\scounty$|\\sparish$|\\scity$"),
+    state = str_trim(tolower(state))
+  ) %>%
+  filter(state %in% selected_states)
+
+# 6. Merge shapefile data with population data
+merged_geo <- county_geo %>%
+  left_join(census_clean, by = c("county", "state"))
+
+# 7. Filter state boundaries for the map
+state_borders <- st_read(state_shapefile, quiet = TRUE) %>%
+  mutate(state = str_trim(tolower(NAME))) %>%
+  filter(state %in% selected_states)
+
+# 8. Plot choropleth
+ggSEMWPop <- ggplot() +
+  geom_sf(data = merged_geo, aes(fill = `2023_pop`), color = "grey30", size = 0.08) +
+  geom_sf(data = state_borders, fill = NA, color = "black", size = 1) +
+  scale_fill_gradientn(
+    name = NULL,
+    colours = c("#f6fbff", "#c2dbef", "#9ecae1", "#6baed6", "#3182bd", "#08519c"),
+    values = scales::rescale(c(0, 10000, 50000, 150000, 400000, 1200000)),
+    na.value = "grey90",
+    limits = c(0, 5000000),
+    oob = squish,
+    labels = label_comma()
+  ) +
+  labs(
+    title = "Figure 8: County Population Estimates (2023)",
+    subtitle = "Southeastern & Midwestern United States",
+    caption = "Data Source: U.S. Census Bureau"
+  ) +
+  guides(fill = guide_colorbar(
+    title.position = "top",
+    title.hjust = 0.5,
+    barheight = unit(8, "cm"),
+    barwidth = unit(1.5, "cm"),
+    label.theme = element_text(size = 18)
+  )) +
+  theme_linedraw(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 36, hjust = 0.5),
+    plot.subtitle = element_text(size = 28, hjust = 0.5),
+    plot.caption = element_text(size = 20),
+    legend.position = "right",
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank()
+  ) +
+  coord_sf(expand = TRUE, clip = "off")
+
+print(ggSEMWPop)
+```
+
+#### Figure 9: Chicago Area Choropleth
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Zoomed Choropleth - Chicago Area"
+#| fig-width: 20
+#| fig-height: 16
+
+ggCookCountyZoomOut <- ggplot() +
+  geom_sf(data = merged_geo, aes(fill = `2023_pop`), color = "grey30", size = 0.08) +
+  geom_sf(data = state_borders, fill = NA, color = "black", size = 0.6) +
+  scale_fill_gradientn(
+    name = NULL,
+    colours = c("#f6fbff", "#c2dbef", "#9ecae1", "#6baed6", "#3182bd", "#08519c"),
+    values = scales::rescale(c(0, 10000, 50000, 150000, 400000, 1200000)),
+    na.value = "grey90",
+    limits = c(0, 5000000),
+    oob = squish,
+    labels = label_comma()
+  ) +
+  labs(
+    title = "Figure 9: Cook County and Surrounding Population (2023)",
+    subtitle = "Greater Chicago Area — Southeastern Wisconsin, Northern Indiana, and Northeast Illinois",
+    caption = "Data Source: U.S. Census Bureau"
+  ) +
+  guides(fill = guide_colorbar(
+    title.position = "top",
+    title.hjust = 0.5,
+    barheight = unit(7, "cm"),
+    barwidth = unit(1.4, "cm"),
+    label.theme = element_text(size = 14)
+  )) +
+  theme_linedraw(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 40, hjust = 0.5),
+    plot.subtitle = element_text(size = 30, hjust = 0.5),
+    plot.caption = element_text(size = 24),
+    legend.position = "right",
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank()
+  ) +
+  coord_sf(
+    xlim = c(-91, -85),   # Wider view west to east
+    ylim = c(40, 43.5),   # Wider view north to south
+    expand = FALSE,
+    clip = "on"
+  )
+
+print(ggCookCountyZoomOut)
+```
+
+#### Figure 10: Florida Area
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Figure 10: Zoomed Choropleth - Florida Area"
+#| fig-width: 20
+#| fig-height: 16
+
+ggFloridaZoom <- ggplot() +
+  geom_sf(data = merged_geo, aes(fill = `2023_pop`), color = "grey30", size = 0.08) +
+  geom_sf(data = state_borders, fill = NA, color = "black", size = 0.6) +
+  scale_fill_gradientn(
+    name = NULL,
+    colours = c("#f6fbff", "#c2dbef", "#9ecae1", "#6baed6", "#3182bd", "#08519c"),
+    values = scales::rescale(c(0, 10000, 50000, 150000, 400000, 1200000)),
+    na.value = "grey90",
+    limits = c(0, 5000000),
+    oob = squish,
+    labels = label_comma()
+  ) +
+  labs(
+    title = "Figure 10: County Population Estimates (2023)",
+    subtitle = "Florida Area",
+    caption = "Data Source: U.S. Census Bureau"
+  ) +
+  guides(fill = guide_colorbar(
+    title.position = "top",
+    title.hjust = 0.5,
+    barheight = unit(7, "cm"),
+    barwidth = unit(1.4, "cm"),
+    label.theme = element_text(size = 14)
+  )) +
+  theme_linedraw(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 40, hjust = 0.5),
+    plot.subtitle = element_text(size = 30, hjust = 0.5),
+    plot.caption = element_text(size = 24),
+    legend.position = "right",
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank()
+  ) +
+  coord_sf(
+    xlim = c(-88.5, -79),   # Florida longitude bounds
+    ylim = c(24, 31.5),     # Florida latitude bounds
+    expand = FALSE,
+    clip = "on"
+  )
+
+print(ggFloridaZoom)
+```
+
+### Hedonic Modeling - Code Setup
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+
+library(tidyverse)
+
+# Step 1: Clean up data for modeling
+hedonic_df <- combined_data %>%
+  transmute(
+    state = str_to_title(state),
+    county = str_to_title(county),
+    median_home_price = as.numeric(median_home_price),
+    pop_2023 = as.numeric(str_remove_all(`2023_pop`, ",")),
+    monthly_payment_q32024 = as.numeric(monthly_payment_q32024),
+    monthly_payment_q32023 = as.numeric(monthly_payment_q32023)
+  ) %>%
+  drop_na(median_home_price, pop_2023)  # Remove rows with missing price or pop
+
+# Simple model with a few key variables
+hedonic_model <- lm(median_home_price ~ pop_2023 + monthly_payment_q32024, data = hedonic_df)
+
+# Improved model with fixed effects and log-transformed population
+hedonic_model_improved <- lm(
+  median_home_price ~ log(pop_2023) + monthly_payment_q32024 + factor(state),
+  data = hedonic_df
+)
+```
+
+#### Table 3: Hedonic Modeling table
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Table 3: Grouped Regression Table (SE & MW States Only)"
+
+library(gtsummary)
+library(dplyr)
+library(stringr)
+library(forcats)
+
+# Define SE and MW states (all lowercase)
+southeast_states <- c("alabama", "arkansas", "louisiana", "kentucky", "tennessee", 
+                      "mississippi", "georgia", "florida", "north carolina", 
+                      "south carolina", "virginia", "west virginia")
+
+midwest_states <- c("minnesota", "wisconsin", "michigan", "ohio", "indiana", 
+                    "illinois", "iowa", "missouri")
+
+# Clean and filter the dataset
+hedonic_df_regional <- hedonic_df %>%
+  mutate(
+    state = str_to_lower(str_trim(state)),
+    region = case_when(
+      state %in% southeast_states ~ "Southeast",
+      state %in% midwest_states ~ "Midwest",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(region))  # keep only SE and MW states
+
+# Confirm multiple state levels exist
+state_levels <- unique(hedonic_df_regional$state)
+print(state_levels)
+
+# Refit model on SE & MW states only
+hedonic_model_grouped <- lm(
+  median_home_price ~ log(pop_2023) + monthly_payment_q32024 + factor(state),
+  data = hedonic_df_regional
+)
+
+# Create gtsummary regression table
+regression_table_grouped <- tbl_regression(
+  hedonic_model_grouped,
+  intercept = TRUE,
+  exponentiate = FALSE
+) %>%
+  modify_header(label = "**Variable**") %>%
+  modify_caption("**Table 3: Hedonic Model: Median Home Price ~ log(Population), Mortgage Payment, State Fixed Effects**") %>%
+  bold_labels()
+
+regression_table_grouped
+```
+
+### Hedonic Modeling Visualizations - Fixed Effects
+
+#### Figure 11 - Midwestern Fixed Effects
+
+```{r}
+#| label: fig-11-midwest
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Figure 11: Midwestern Fixed Effects"
+#| fig-width: 10
+#| fig-height: 6
+
+library(tidyr)
+library(tidyverse)
+library(ggplot2)
+
+selected_states <- c(
+  "alabama", "arkansas", "louisiana", "kentucky", "tennessee", "mississippi",
+  "georgia", "florida", "north carolina", "south carolina", "virginia", "west virginia",
+  "minnesota", "wisconsin", "michigan", "ohio", "indiana", "illinois", "iowa", "missouri"
+)
+
+pop_trends <- census_clean %>%
+  mutate(
+    pop_change = (`2023_pop` - `2020_pop`) / `2020_pop`,  # % change
+    county = str_trim(tolower(county)),
+    state = str_trim(tolower(state))
+  )
+
+scatter_data <- naor_housing_clean %>%
+  mutate(
+    county = str_trim(tolower(county)),
+    state = str_trim(tolower(state))
+  ) %>%
+  left_join(pop_trends, by = c("county", "state"))
+
+mw_states <- c("minnesota", "wisconsin", "michigan", "ohio", "indiana",
+               "illinois", "iowa", "missouri", "alabama")
+
+hedonic_df <- hedonic_df %>%
+  mutate(state = str_trim(tolower(state)))
+
+hedonic_df_selected <- hedonic_df %>%
+  filter(state %in% selected_states)
+
+# Run model with Alabama as reference
+hedonic_model_alabama_ref <- lm(
+  median_home_price ~ log(pop_2023) + monthly_payment_q32024 + factor(state),
+  data = hedonic_df_selected
+)
+
+# Extract MW state effects (omit Southeastern states from visualization, but not model)
+mw_state_effects <- tidy(hedonic_model_alabama_ref, conf.int = TRUE) %>%
+  filter(str_detect(term, "factor\\(state\\)")) %>%
+  mutate(state = str_remove(term, "factor\\(state\\)")) %>%
+  filter(state %in% mw_states)
+
+# Plot with Alabama as baseline
+ggplot(mw_state_effects, aes(x = reorder(state, estimate), y = estimate)) +
+  geom_col(fill = "#3182bd", width = 0.6) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey", linewidth = 0.8) +
+  labs(
+    title = "Figure 11: State Fixed Effects from Hedonic Model",
+    subtitle = "Midwestern States (Reference: Alabama)",
+    y = "Effect on Median Home Price ($)",
+    x = NULL,
+    caption = "Estimates are relative to Alabama (omitted category)"
+  ) +
+  theme_linedraw(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 14, hjust = 0.5),
+    plot.caption = element_text(size = 10, hjust = 1),
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    panel.grid.major.x = element_blank()
+  )
+```
+
+#### Figure 12 - Southeastern Fixed Effects
+
+```{r}
+#| label: fig-12-southeast
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Figure 12: Southeastern Fixed Effects"
+#| fig-width: 10
+#| fig-height: 6
+
+library(ggplot2)
+library(dplyr)
+library(broom)
+library(stringr)
+
+# Define southeastern states
+se_states <- c(
+  "alabama", "arkansas", "louisiana", "kentucky", "tennessee", "mississippi",
+  "georgia", "florida", "north carolina", "south carolina", "virginia", "west virginia"
+)
+
+# Normalize state names in your data
+hedonic_df <- hedonic_df %>%
+  mutate(state = str_to_lower(str_trim(state)))
+
+# Filter to southeastern states only
+hedonic_df_se <- hedonic_df %>%
+  filter(state %in% se_states)
+
+# Fit the model with state fixed effects
+hedonic_model_se <- lm(
+  median_home_price ~ log(pop_2023) + monthly_payment_q32024 + factor(state),
+  data = hedonic_df_se
+)
+
+# Tidy and extract state effects (excluding intercept and non-state terms)
+state_effects_se <- tidy(hedonic_model_se, conf.int = TRUE) %>%
+  filter(str_detect(term, "factor\\(state\\)")) %>%
+  mutate(state = str_remove(term, "factor\\(state\\)"))
+
+# Create plot
+ggplot(state_effects_se, aes(x = reorder(state, estimate), y = estimate)) +
+  geom_col(fill = "#3182bd", width = 0.6) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 0.8) +
+  labs(
+    title = "Figure 12: State Fixed Effects from Hedonic Model",
+    subtitle = "Southeastern States (Reference: Alabama)",
+    y = "Effect on Median Home Price ($)",
+    x = NULL,
+    caption = "Estimates are relative to Alabama (omitted category)"
+  ) +
+  theme_linedraw(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 14, hjust = 0.5),
+    plot.caption = element_text(size = 10, hjust = 1),
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    panel.grid.major.x = element_blank()
+  )
+```
+
+### BREAK - FINAL VISUALIZATIONS
+
+#### Figure 13 - Scatterplot 1 - MW
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Figure 13 Midwestern Population Growth vs. Home Prices"
+#| fig-width: 10
+#| fig-height: 6
+
+library(tidyverse)
+library(scales)
+library(stringr)
+
+# Define your state groups
+se_states <- c(
+  "alabama", "arkansas", "louisiana", "kentucky", "tennessee", "mississippi",
+  "georgia", "florida", "north carolina", "south carolina", "virginia", "west virginia"
+)
+
+mw_states <- c(
+  "minnesota", "wisconsin", "michigan", "ohio", "indiana",
+  "illinois", "iowa", "missouri"
+)
+
+# Prepare population change % and clean
+pop_trends <- census_clean %>%
+  mutate(
+    pop_change = (`2023_pop` - `2020_pop`) / `2020_pop`,  # % change
+    county = str_trim(tolower(county)),
+    state = str_trim(tolower(state))
+  )
+
+# Merge housing with population trends
+scatter_data <- naor_housing_clean %>%
+  mutate(
+    county = str_trim(tolower(county)),
+    state = str_trim(tolower(state))
+  ) %>%
+  left_join(pop_trends, by = c("county", "state"))
+
+midwest_plot <- scatter_data %>%
+  filter(state %in% mw_states) %>%
+  ggplot(aes(x = pop_change * 100, y = median_home_price)) +
+  geom_point(alpha = 0.6, color = "#2b8cbe", size = 1) +
+  geom_smooth(method = "lm", color = "black", se = TRUE, linetype = "dashed") +
+  labs(
+    title = "Figure 13: County Population Growth vs. Median Home Prices",
+    subtitle = "Midwestern U.S. Counties",
+    x = "% Population Growth (2020–2023)",
+    y = "2024 Median Home Price",
+    caption = "Source: U.S. Census Bureau & National Association of Realtors"
+  ) +
+  scale_y_continuous(labels = label_dollar()) +
+  theme_linedraw(base_size = 14)
+
+print(midwest_plot)
+```
+
+#### Figure 14 - Scatterplot 2 - SE
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Southeastern Population Growth vs. Home Prices"
+#| fig-width: 10
+#| fig-height: 6
+
+southeast_plot <- scatter_data %>%
+  filter(state %in% se_states) %>%
+  ggplot(aes(x = pop_change * 100, y = median_home_price)) +
+  geom_point(alpha = 0.6, color = "#006d2c", size = 1) +
+  geom_smooth(method = "lm", color = "black", se = TRUE, linetype = "dashed") +
+  labs(
+    title = "Figure 14: County Population Growth vs. Median Home Prices",
+    subtitle = "Southeastern U.S. Counties",
+    x = "% Population Growth (2020–2023)",
+    y = "2024 Median Home Price",
+    caption = "Source: U.S. Census Bureau & National Association of Realtors"
+  ) +
+  scale_y_continuous(labels = label_dollar()) +
+  scale_x_continuous(limits = c(-15, 20)) +  # <- Set matching limits
+  theme_linedraw(base_size = 14)
+
+print(southeast_plot)
+```
+
+#### **Figure 15 - Scatterplot 3 - Comparison**
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Overlayed Growth vs. Price Comparison"
+#| fig-width: 10
+#| fig-height: 6
+
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+# Define regional tags
+se_states <- c(
+  "alabama", "arkansas", "louisiana", "kentucky", "tennessee", "mississippi",
+  "georgia", "florida", "north carolina", "south carolina", "virginia", "west virginia"
+)
+mw_states <- c(
+  "minnesota", "wisconsin", "michigan", "ohio", "indiana", "illinois", "iowa", "missouri"
+)
+
+# Add region label to scatter_data
+overlay_data <- scatter_data %>%
+  mutate(region = case_when(
+    state %in% se_states ~ "Southeast",
+    state %in% mw_states ~ "Midwest",
+    TRUE ~ NA_character_
+  )) %>%
+  filter(!is.na(region))
+
+# Plot with consistent x-axis
+ggplot(overlay_data, aes(x = pop_change * 100, y = median_home_price, color = region)) +
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_smooth(method = "lm", se = TRUE, linetype = "dashed", linewidth = 1.1) +
+  scale_color_manual(values = c("Midwest" = "#2b8cbe", "Southeast" = "darkgreen")) +
+  labs(
+    title = "Figure 15: County Population Growth vs. Median Home Prices (2020–2023)",
+    subtitle = "Comparison of Southeastern and Midwestern U.S. Counties",
+    x = "% Population Growth (2020–2023)",
+    y = "2024 Median Home Price",
+    color = "Region",
+    caption = "Source: U.S. Census Bureau & National Association of Realtors"
+  ) +
+  scale_y_continuous(labels = label_dollar()) +
+  scale_x_continuous(limits = c(-15, 20)) +
+  theme_linedraw(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 14, hjust = 0.5),
+    legend.title = element_text(size = 13),
+    legend.text = element_text(size = 12),
+    legend.position = "bottom",
+    plot.caption = element_text(size = 10, hjust = 1)
+  )
+```
