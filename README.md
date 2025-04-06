@@ -1,63 +1,113 @@
 # **README**
 
-### **Christian McIntire**
+# **Population Density and Housing Price Dynamics**  
+### *A Comparative Analysis of the Southeastern and Midwestern United States*
 
+<small>
 
-# **Introduction**
-Housing affordability remains a pressing issue across the United States, particularly in regions experiencing rapid urbanization and population growth. The Southeastern United States has seen significant population growth in recent years, whereas the Midwestern United States has remained much more stable or even seen population decline (Biernacka-Lievestro & Fall, 2023). 
+**Author:** Christian McIntire  
+**View Full Report:** [github.com/christianmcintire/DACapstone](https://github.com/christianmcintire/DACapstone)
 
-This study seeks to examine the relationship between population density, growth, and housing prices in these two regions, to determine how demographic shifts impact affordability. The Southeastern and Midwestern regions are defined as follows:
+---
 
-- **Southeastern U.S.**: Arkansas, Louisiana, Kentucky, Tennessee, Mississippi, Alabama, Georgia, Florida, North Carolina, South Carolina, Virginia, and West Virginia.
-- **Midwestern U.S.**: Minnesota, Wisconsin, Michigan, Ohio, Indiana, Illinois, Iowa, and Missouri.
+## **Introduction**
 
-### **Research Questions**
-1. How has population density historically affected housing prices in the Southeastern and Midwestern United States?
+Housing affordability remains a pressing issue across the United States, particularly in regions experiencing rapid urbanization and population growth. The Southeastern U.S. has seen significant population increases, whereas the Midwest has remained more stable or seen decline ([Biernacka-Lievestro & Fall, 2023](https://www.pewtrusts.org/en/research-and-analysis/articles/2023/05/17/southern-states-gain-residents-the-fastest)).
+
+This study investigates the relationship between population dynamics and housing prices in these two regions.
+
+### **Regions Studied**
+
+- **Southeastern U.S.**: AR, LA, KY, TN, MS, AL, GA, FL, NC, SC, VA, WV  
+- **Midwestern U.S.**: MN, WI, MI, OH, IN, IL, IA, MO
+
+---
+
+## **Research Questions**
+
+1. How has population density historically affected housing prices in the Southeastern and Midwestern U.S.?
 2. How can these patterns be measured to predict future changes in the U.S. housing market?
 
 ---
 
-# **Methodology**
-This study employs the following techniques:
+## **Methodology**
 
-- **Choropleth Maps** – Visualizing county-level home prices using spatial analysis.
-- **Hedonic Regression Models** – Decomposing housing prices into key factors, including regional fixed effects and population density.
-- **Panel Data Estimation** – Handling time-series data with multiple geographic units.
-- **ARIMA Forecasting** – Time-series forecasting to predict future housing prices.
+This project combines spatial visualization, econometric modeling, and forecasting:
 
-### **Data Sources**
-This project uses publicly available datasets from:
-
-1. **National Association of Realtors** – County-level median home prices (2024).
-2. **Federal Reserve Bank of St. Louis (FRED)** – Housing Price Index data (2024).
-3. **U.S. Census Bureau** – County-level population estimates (2024).
-4. **Zillow Research Data** – Historical home values and unique price metrics (2024).
-5. **TIGER/Line Shapefiles** from the **U.S. Census Bureau** – Geographic county/state boundaries.
-   - **Shapefiles were too large for GitHub but can be downloaded here:**  
-     🔗 [U.S. Census Bureau Shapefiles](https://www2.census.gov/geo/tiger/TIGER2024/)
+- **Choropleth Maps** – County-level visualizations using TIGER/Line shapefiles  
+- **Hedonic Regression Models** – Decomposing housing prices into population, mortgage, and fixed effects  
+- **Panel Data Estimation** – Handling state-level variation  
+- **ARIMA Forecasting** – Projecting home prices through 2030
 
 ---
 
-### Key Findings
-- Population trends in the **Southeastern U.S.** have shown significant growth, whereas the **Midwestern U.S.** has remained more stable or declined in some areas.
-- Housing prices in the **Southeast** have seen steeper increases, especially in urban and suburban areas.
-- **Choropleth maps** reveal strong regional patterns in home prices, with coastal and metropolitan counties exhibiting the highest median prices.
-- **ARIMA Forecasting** suggests continued home price growth in both regions, albeit at different rates.
+## **Key Findings**
 
-### Next Steps
-#### 1. Hedonic Regression Model
-- A more detailed **regression model** will be used to control for multiple factors affecting home prices, such as **income levels, employment rates, and local economic indicators**.
+### Regional Housing Trends
 
-#### 2. Panel Data Estimation
-- This method will allow for **cross-sectional and time-series analysis**, helping isolate the impact of different regional factors on housing prices.
+- **Southeast** shows higher price inflation, especially in metro counties (e.g., FL, NC, TN)  
+- **Midwest** remains more stable and affordable across most counties
+
+### ARIMA Forecasting (2024–2030)
+
+- Southeast expected to see faster growth and greater volatility  
+- Midwest projected to grow steadily and with less uncertainty  
+- Confidence intervals show higher forecast risk in the Southeast
+
+### Hedonic Regression Results
+
+- **Monthly mortgage payment** is the most statistically significant predictor of median price (`p < 0.001`)
+- **log(Population)** is *not* statistically significant (`p = 0.5`)
+- **State fixed effects** reveal regional price variations even after controlling for population and mortgage:
+
+  - Virginia & Missouri have significantly lower prices than Alabama (reference)
+  - Florida, North Carolina, and Tennessee show mixed effects
+
+### County-Level Trends
+
+- Southeastern counties show a wider distribution in both population growth and prices  
+- Midwestern counties are clustered within lower price/growth ranges  
+- Choropleth and scatter plots confirm these patterns visually
 
 ---
 
-## References
-- **TIGER/Line Shapefiles:** [U.S. Census Bureau](https://www2.census.gov/geo/tiger/TIGER2024/)
-- **Choropleth Mapping in R:** [R Graph Gallery](https://r-graph-gallery.com/327-chloropleth-map-from-geojson-with-ggplot2.html)
-- **Customizing Legends in ggplot2:** [GeeksforGeeks](https://www.geeksforgeeks.org/control-size-of-ggplot2-legend-items-in-r/)
-- **National Association of Realtors (2024)**
-- **Federal Reserve Bank of St. Louis (FRED) (2024)**
-- **U.S. Census Bureau Population Estimates (2024)**
-- **Zillow Research Data (2024)**
+## **Data Sources**
+
+- **National Association of Realtors** – Q3 2024 median home prices  
+- **Federal Reserve Bank of St. Louis (FRED)** – HPI data (1975–2024)  
+- **U.S. Census Bureau** – County population estimates (2020–2023)  
+- **Zillow Research** – ZHVI (Zillow Home Value Index)  
+- **TIGER/Line Shapefiles** – [Download Here](https://www2.census.gov/geo/tiger/TIGER2024/)
+
+---
+
+## **Visual Output**
+
+- Visualizations and Tables included  
+- Regional Choropleths, ARIMA Forecasts, Scatterplots  
+- Cleanly formatted using the MDPI LaTeX journal style
+
+---
+
+## **GitHub Repository**
+
+View the full LaTeX report, R code, datasets, and figures:  
+[https://github.com/christianmcintire/DACapstone](https://github.com/christianmcintire/DACapstone)
+
+---
+
+## **References**
+
+- [Pew Research – Southern States Growth](https://www.pewtrusts.org/en/research-and-analysis/articles/2023/05/17/southern-states-gain-residents-the-fastest)  
+- [National Association of Realtors](https://www.nar.realtor/)  
+- [Federal Reserve Bank of St. Louis](https://fred.stlouisfed.org/)  
+- [U.S. Census Bureau](https://www.census.gov/)  
+- [Zillow Research](https://www.zillow.com/research/data/)  
+- [TIGER/Line Shapefiles](https://www2.census.gov/geo/tiger/TIGER2024/)  
+- [R Graph Gallery – Choropleth](https://r-graph-gallery.com/327-chloropleth-map-from-geojson-with-ggplot2.html)
+
+---
+
+*Built using R, ggplot2, and LaTeX*
+
+</small>
