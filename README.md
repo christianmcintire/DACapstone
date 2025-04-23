@@ -73,7 +73,7 @@ This project combines spatial visualization, econometric modeling, and forecasti
 
 ## **Data Sources**
 
-- **National Association of Realtors** – Q3 2024 median home prices  
+- **National Association of Realtors** – Q3 2024 median home prices and mortgage rates
 - **Federal Reserve Bank of St. Louis (FRED)** – HPI data (1975–2024)  
 - **U.S. Census Bureau** – County population estimates (2020–2023)  
 - **Zillow Research** – ZHVI (Zillow Home Value Index)  
