@@ -1,0 +1,242 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={README},
+  pdfauthor={Christian McIntire},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{README}
+\author{Christian McIntire}
+\date{2025-03-15}
+
+\begin{document}
+\maketitle
+
+\section{\texorpdfstring{\textbf{Introduction}}{Introduction}}\label{introduction}
+
+Housing affordability remains a pressing issue across the United States,
+particularly in regions experiencing rapid urbanization and population
+growth. The Southeastern United States has seen significant population
+growth in recent years, whereas the Midwestern United States has
+remained much more stable or even seen population decline
+(Biernacka-Lievestro \& Fall, 2023).
+
+This study seeks to examine the relationship between population density,
+growth, and housing prices in these two regions, to determine how
+demographic shifts impact affordability. The Southeastern and Midwestern
+regions are defined as follows:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Southeastern U.S.}: Arkansas, Louisiana, Kentucky, Tennessee,
+  Mississippi, Alabama, Georgia, Florida, North Carolina, South
+  Carolina, Virginia, and West Virginia.
+\item
+  \textbf{Midwestern U.S.}: Minnesota, Wisconsin, Michigan, Ohio,
+  Indiana, Illinois, Iowa, and Missouri.
+\end{itemize}
+
+\subsubsection{\texorpdfstring{\textbf{Research
+Questions}}{Research Questions}}\label{research-questions}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  How has population density historically affected housing prices in the
+  Southeastern and Midwestern United States?
+\item
+  How can these patterns be measured to predict future changes in the
+  U.S. housing market?
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{\texorpdfstring{\textbf{Methodology}}{Methodology}}\label{methodology}
+
+This study employs the following techniques:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Choropleth Maps} -- Visualizing county-level home prices using
+  spatial analysis.
+\item
+  \textbf{Hedonic Regression Models} -- Decomposing housing prices into
+  key factors, including regional fixed effects and population density.
+\item
+  \textbf{Panel Data Estimation} -- Handling time-series data with
+  multiple geographic units.
+\item
+  \textbf{ARIMA Forecasting} -- Time-series forecasting to predict
+  future housing prices.
+\end{itemize}
+
+\subsubsection{\texorpdfstring{\textbf{Data
+Sources}}{Data Sources}}\label{data-sources}
+
+This project uses publicly available datasets from:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{National Association of Realtors} -- County-level median home
+  prices (2024).
+\item
+  \textbf{Federal Reserve Bank of St.~Louis (FRED)} -- Housing Price
+  Index data (2024).
+\item
+  \textbf{U.S. Census Bureau} -- County-level population estimates
+  (2024).
+\item
+  \textbf{Zillow Research Data} -- Historical home values and unique
+  price metrics (2024).
+\item
+  \textbf{TIGER/Line Shapefiles} from the \textbf{U.S. Census Bureau} --
+  Geographic county/state boundaries.
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{Shapefiles were too large for GitHub but can be downloaded
+    here:}\\
+    🔗 \href{https://www2.census.gov/geo/tiger/TIGER2024/}{U.S. Census
+    Bureau Shapefiles}
+  \end{itemize}
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsubsection{Key Findings}\label{key-findings}
+
+\begin{itemize}
+\tightlist
+\item
+  Population trends in the \textbf{Southeastern U.S.} have shown
+  significant growth, whereas the \textbf{Midwestern U.S.} has remained
+  more stable or declined in some areas.
+\item
+  Housing prices in the \textbf{Southeast} have seen steeper increases,
+  especially in urban and suburban areas.
+\item
+  \textbf{Choropleth maps} reveal strong regional patterns in home
+  prices, with coastal and metropolitan counties exhibiting the highest
+  median prices.
+\item
+  \textbf{ARIMA Forecasting} suggests continued home price growth in
+  both regions, albeit at different rates.
+\end{itemize}
+
+\subsubsection{Next Steps}\label{next-steps}
+
+\paragraph{1. Hedonic Regression Model}\label{hedonic-regression-model}
+
+\begin{itemize}
+\tightlist
+\item
+  A more detailed \textbf{regression model} will be used to control for
+  multiple factors affecting home prices, such as \textbf{income levels,
+  employment rates, and local economic indicators}.
+\end{itemize}
+
+\paragraph{2. Panel Data Estimation}\label{panel-data-estimation}
+
+\begin{itemize}
+\tightlist
+\item
+  This method will allow for \textbf{cross-sectional and time-series
+  analysis}, helping isolate the impact of different regional factors on
+  housing prices.
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{References}\label{references}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{TIGER/Line Shapefiles:}
+  \href{https://www2.census.gov/geo/tiger/TIGER2024/}{U.S. Census
+  Bureau}
+\item
+  \textbf{Choropleth Mapping in R:}
+  \href{https://r-graph-gallery.com/327-chloropleth-map-from-geojson-with-ggplot2.html}{R
+  Graph Gallery}
+\item
+  \textbf{Customizing Legends in ggplot2:}
+  \href{https://www.geeksforgeeks.org/control-size-of-ggplot2-legend-items-in-r/}{GeeksforGeeks}
+\item
+  \textbf{National Association of Realtors (2024)}
+\item
+  \textbf{Federal Reserve Bank of St.~Louis (FRED) (2024)}
+\item
+  \textbf{U.S. Census Bureau Population Estimates (2024)}
+\item
+  \textbf{Zillow Research Data (2024)}
+\end{itemize}
+
+\end{document}
