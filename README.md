@@ -6,7 +6,7 @@
 <small>
 
 **Author:** Christian McIntire  
-**View Full Report:** [github.com/christianmcintire/DACapstone](https://github.com/christianmcintire/DACapstone)
+**View Full Repository:** [github.com/christianmcintire/DACapstone](https://github.com/christianmcintire/DACapstone)
 
 ---
 
